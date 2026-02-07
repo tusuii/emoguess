@@ -1,0 +1,66 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: inventory
+
+bases:
+  - ../../base/mysql
+  - ../../base/backend
+  - ../../base/frontend
+
+# Image tags (updated by CI/CD)
+images:
+  - name: gitea.example.com/inventory/backend
+    newTag: main-abc1234  # CI/CD will update this
+  - name: gitea.example.com/inventory/frontend
+    newTag: main-abc1234  # CI/CD will update this
+
+# Replica counts for production
+replicas:
+  - name: backend
+    count: 3
+  - name: frontend
+    count: 3
+
+# Resource adjustments for production
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: backend
+      spec:
+        template:
+          spec:
+            containers:
+            - name: backend
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "200m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "400m"
+    target:
+      kind: Deployment
+      name: backend
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: frontend
+      spec:
+        template:
+          spec:
+            containers:
+            - name: frontend
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "200m"
+    target:
+      kind: Deployment
+      name: frontend
